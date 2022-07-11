@@ -1,5 +1,7 @@
+This is a fork of WwiseTools, a library for working with the Wwise Authoring API by johnloser-lwi.
 
-[![Nuget](https://img.shields.io/nuget/v/LWI.WwiseTools)](https://www.nuget.org/packages/LWI.WwiseTools/)
+The original readme is below:
+-------------------------------------
 
 # Wwise Tools
 正在开发的基于C# Waapi的Wwise生产力工具，可以快速生成、编辑Wwise的Object，达到批量添加的效果，提升工作效率。
