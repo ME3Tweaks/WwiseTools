@@ -378,7 +378,7 @@ namespace WwiseTools.Utils
             return result;
         }
 
-        public async Task<bool> AddEventToBankAsync(WwiseObject soundBank, string eventId)
+        public async Task<bool> AddToBankInclusionList(WwiseObject soundBank, string eventId)
         {
             if (!await TryConnectWaapiAsync()) return false;
 
@@ -1181,14 +1181,15 @@ namespace WwiseTools.Utils
 
             if (saveCurrent) await SaveWwiseProjectAsync();
 
-            var projectPath = await GetWwiseProjectPathAsync();
+            // var projectPath = await GetWwiseProjectPathAsync();
 
             try
             {
                 //await Client.Call(ak.wwise.ui.project.close);
                 var query = new
                 {
-                    path = projectPath
+                    path = path,
+                    bypassSave = !saveCurrent
                 };
 
                 var func = Function.Verify("ak.wwise.ui.project.open");
@@ -1932,6 +1933,31 @@ namespace WwiseTools.Utils
             catch (Exception e)
             {
                 WaapiLog.InternalLog($"Failed to save project! =======> {e.Message}");
+            }
+
+            return false;
+        }
+
+        public async Task<bool> SetAutomationMode(bool enable)
+        {
+            if (!await TryConnectWaapiAsync()) return false;
+            try
+            {
+                var query = new
+                {
+                    enable = enable
+                };
+
+
+
+
+                var jresult = await _client.Call("ak.wwise.debug.enableAutomationMode", query, null, TimeOut);
+                if (jresult == null) return false;
+                return true;
+            }
+            catch (Exception e)
+            {
+                WaapiLog.InternalLog($"Failed to change automation mode: {e.Message}");
             }
 
             return false;

@@ -26,6 +26,8 @@ the specific language governing permissions and limitations under the License.
 
 *******************************************************************************/
 
+using System.Diagnostics;
+
 namespace WaapiClient
 {
     /// <summary>
@@ -106,6 +108,8 @@ namespace WaapiClient
                 args = "{}";
             if (options == null)
                 options = "{}";
+
+            Debug.WriteLine($"{uri}, {args}, {options}, {timeout}ms timeout");
 
             return await wamp.Call(uri, args, options, timeout);
         }
