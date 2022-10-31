@@ -14,6 +14,7 @@
     <Version>2.2.2</Version>
     <PackageTags>Wwise,Waapi,WwiseTools,Audio,Sound,Game</PackageTags>
     <AssemblyName>WwiseTools</AssemblyName>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
