@@ -10,13 +10,6 @@ using WwiseTools.Models;
 
 namespace WwiseTools.Utils
 {
-    public enum GlobalImportSettings
-    {
-        useExisting,
-        replaceExisting,
-        createNew
-    }
-
     /// <summary>
     /// 用于实现基础功能
     /// </summary>
@@ -26,17 +19,52 @@ namespace WwiseTools.Utils
 
         private bool _initializing = false;
 
+        private WaapiFunctionList _function;
+
+        private WaapiTopicList _topic;
+
+        private WaapiUICommandList _uiCommand;
+
         public WwiseInfo ConnectionInfo { get; private set; }
 
-        internal WaapiFunction Function { get; set; }
+        public WaapiFunctionList Function
+        {
+            get
+            {
+                if (_function is null) _function = new WaapiFunctionList();
+                return _function;
+            }
+        }
 
-        internal WaapiTopic Topic { get; set; }
+        public WaapiTopicList Topic
+        {
+            get
+            {
+                if (_topic is null) _topic = new WaapiTopicList();
+                return _topic;
+            }
+        }
+
+        public WaapiUICommandList UICommand
+        {
+            get
+            {
+                if (_uiCommand is null) _uiCommand = new WaapiUICommandList();
+                return _uiCommand;
+            }
+        }
+
+        internal int WampPort { get; set; } = -1;
+
+        internal string IP { get; set; } = string.Empty;
 
         private readonly Dictionary<string, int> _subscriptions = new Dictionary<string, int>();
 
         public event Action Disconnected;
 
-        public int TimeOut => 10000;
+        public event Action<WwiseInfo> Connected;
+
+        public int TimeOut { get; set; } = 10000;
 
 
         public static WwiseUtility Instance
@@ -51,10 +79,6 @@ namespace WwiseTools.Utils
         
 
         private static WwiseUtility _instance;
-
-        
-
-        public GlobalImportSettings ImportSettings = GlobalImportSettings.useExisting;
 
         private WwiseUtility()
         {
@@ -121,7 +145,12 @@ namespace WwiseTools.Utils
 
         }
 
-        public async Task<bool> ConnectAsync(int wampPort = 8080) // 初始化，返回连接状态
+        public async Task<bool> ConnectAsync(int wampPort = 8080)
+        {
+            return await ConnectAsync("localhost", wampPort);
+        }
+
+        public async Task<bool> ConnectAsync(string ip ,int wampPort = 8080) // 初始化，返回连接状态
         {
             if (_client != null && _client.IsConnected()) return true;
 
@@ -132,29 +161,40 @@ namespace WwiseTools.Utils
                 _initializing = true;
                 WaapiLog.InternalLog("Initializing...");
                 _client = new JsonClient();
-                await _client.Connect($"ws://localhost:{wampPort}/waapi", TimeOut); // 尝试创建Wwise连接
-                await GetFunctionsAsync();
-                await GetTopicsAsync();
-                WaapiLog.InternalLog("Connected successfully!");
+                var uri = $"ws://{ip}:{wampPort}/waapi";
+                await _client.Connect(uri, TimeOut); // 尝试创建Wwise连接
+
+                WaapiLog.InternalLog($"Connected successfully to {ip}:{wampPort}!");
+                
+                Function.Clear();
+                UICommand.Clear();
+                Topic.Clear();
 
                 _client.Disconnected += () =>
                 {
                     _client = null;
                     ConnectionInfo = null;
+                    Disconnected?.Invoke();
                     WaapiLog.InternalLog("Connection closed!"); // 丢失连接提示
                 };
 
-
-
-
-                for (int i = 0; i < 5; i++)
+                // 由于工程加载可能会导致信息获取失败，这里进行5次重复检查
+                var retryCount = 5;
+                for (int i = 1; i <= retryCount; i++)
                 {
-                    WaapiLog.InternalLog("Trying to fetch connection info ...");
+                    WaapiLog.InternalLog($"Trying to fetch connection info ({i}/{retryCount}) ...");
 
-                    ConnectionInfo = await GetWwiseInfoAsync();
+                    if (Function.Count == 0) await GetFunctionsAsync();
+                    if (Topic.Count == 0) await GetTopicsAsync();
+                    if (UICommand.Count == 0) await GetCommandsAsync();
 
-                    if (ConnectionInfo != null) break;
+                    if (ConnectionInfo == null) ConnectionInfo = await GetWwiseInfoAsync();
 
+                    if (ConnectionInfo != null && Function.Count != 0 && Topic.Count != 0 && UICommand.Count != 0) break;
+
+                    
+                    WaapiLog.InternalLog("Failed to fetch connection info! Retry in 3 seconds ...");
+                    
                     await Task.Delay(3000);
                 }
 
@@ -165,9 +205,12 @@ namespace WwiseTools.Utils
                     await DisconnectAsync();
                     return false;
                 }
+                
+                WaapiLog.InternalLog("Connection info fetched successfully!");
 
-
+                WampPort = wampPort;
                 WaapiLog.InternalLog(ConnectionInfo);
+                Connected?.Invoke(ConnectionInfo);
                 return true;
             }
             catch (Exception e)
@@ -197,11 +240,23 @@ namespace WwiseTools.Utils
             {
                 WaapiLog.InternalLog($"Error while closing! ======> {e.Message}");
             }
+            finally
+            {
+                WampPort = -1;
+            }
         }
 
-        public async Task<bool> TryConnectWaapiAsync(int wampPort = 8080) 
+        public async Task<bool> TryConnectWaapiAsync(int wampPort = 8080)
         {
-            var connected = await ConnectAsync(wampPort);
+            return await TryConnectWaapiAsync("localhost", wampPort);
+        }
+
+        public async Task<bool> TryConnectWaapiAsync(string ip, int wampPort = 8080)
+        {
+            if (WampPort != -1) wampPort = WampPort;
+            if (!string.IsNullOrEmpty(IP)) ip = IP;
+
+            var connected = await ConnectAsync(ip, wampPort);
 
             return connected && _client.IsConnected();
         }

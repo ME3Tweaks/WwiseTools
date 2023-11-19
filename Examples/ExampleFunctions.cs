@@ -1,7 +1,8 @@
-﻿using System.Xml;
+﻿using System.Diagnostics;
+using System.Xml;
+using WwiseTools.WwiseTypes;
 using WwiseTools.Objects;
 using WwiseTools.Properties;
-using WwiseTools.References;
 using WwiseTools.Utils;
 using WwiseTools.Utils.Feature2021;
 using WwiseTools.Utils.Feature2022;
@@ -12,14 +13,9 @@ namespace Examples
     {
         static WwiseUtility Waapi = WwiseTools.Utils.WwiseUtility.Instance;
 
-        public static void CustomLogger(object message, bool firstLog)
+        public static void CustomLogger(object message)
         {
             string msg = DateTime.Now.ToString() + " => " + message.ToString();
-
-
-            if (firstLog)
-                msg = "\n\n\n\n" + $"Session Started On {DateTime.Now.ToString()}>\n" +
-                      msg;
 
             using (var writer = new StreamWriter("log", true))
             {
@@ -27,12 +23,39 @@ namespace Examples
             }
         }
 
+        public static async Task GetSourceLanguageAsync()
+        {
+            var selection = await Waapi.GetWwiseObjectsBySelectionAsync();
+            foreach (var wwiseObject in selection)
+            {
+                var sound = wwiseObject.AsContainer();
+                var sources = await sound.GetChildrenAsync();
+
+                foreach (var source in sources)
+                {
+                    var language = await (new AudioFileSource(source)).GetLanguageAsync();
+                    
+                    Console.WriteLine(language);
+                }
+            }
+        }
+
+        public static async Task HierarchyCastAsync()
+        {
+            var selection = await Waapi.GetWwiseObjectsBySelectionAsync();
+            foreach (var wwiseObject in selection)
+            {
+                wwiseObject.AsContainer();
+            }
+        }
+        
+
         public static async Task GetReferencedEventsAsync()
         {
             var selection = await Waapi.GetWwiseObjectsBySelectionAsync();
             foreach (var wwiseObject in selection)
             {
-                var references = await Waapi.GetEventReferencesToWwiseObjectAndParentsAsync(wwiseObject);
+                var references = await Waapi.GetEventsReferencingWwiseObjectAndParentsAsync(wwiseObject);
                 foreach (var reference in references)
                 {
                     WaapiLog.Log(reference);
@@ -45,7 +68,7 @@ namespace Examples
             var selection = await Waapi.GetWwiseObjectsBySelectionAsync();
             foreach (var wwiseObject in selection)
             {
-                var references = await Waapi.GetSoundBankReferencesToWwiseObjectAsync(wwiseObject);
+                var references = await Waapi.GetSoundBanksReferencingWwiseObjectAsync(wwiseObject);
                 foreach (var reference in references)
                 {
                     WaapiLog.Log(reference);
@@ -58,15 +81,15 @@ namespace Examples
         public static async Task BatchSetTestAsync()
         {
             var selection = await Waapi.GetWwiseObjectsBySelectionAsync();
-            await WwiseUtility.Instance.BatchSetObjectPropertyAsync(selection, 
+            await WwiseUtility.Instance.BatchSetObjectPropertyAsync(selection.ToArray(), 
                 WwiseProperty.Prop_Volume(-3),
                 WwiseProperty.Prop_OverrideOutput(true),
                 WwiseProperty.Prop_OutputBusVolume(-3));
 
             var bus = await Waapi.GetWwiseObjectByNameAsync("Bus:Test");
             if (bus == null) return;
-            await WwiseUtility.Instance.BatchSetObjectReferenceAsync(selection, 
-                WwiseReference.Ref_OutputBus(bus));
+            await WwiseUtility.Instance.BatchSetObjectPropertyAsync(selection.ToArray(), 
+                WwiseProperty.Prop_OutputBus(bus));
         }
 
 
@@ -106,7 +129,7 @@ namespace Examples
                 WaapiLog.Log(node.Name);
             }
 
-            foreach (var child in await obj.GetHierarchy().GetChildrenAsync())
+            foreach (var child in await obj.AsContainer().GetChildrenAsync())
             {
                 WaapiLog.Log(child.Name);
             }

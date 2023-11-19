@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Xml;
 using WwiseTools.Models.SoundBank;
@@ -8,11 +10,13 @@ namespace WwiseTools.Utils.SoundBank
 {
     public static class GeneratedSoundBankExtension
     {
-        public static async Task<List<GeneratedSoundBankPath>> GetGeneratedSoundBankPaths(this WwiseUtility util)
+        public static async Task<List<GeneratedSoundBankPath>> GetGeneratedSoundBankPathsAsync(this WwiseUtility util)
         {
             var result = new List<GeneratedSoundBankPath>();
 
-            var projectPath = await util.GetWwiseProjectPathAsync();
+            if (!(await util.TryConnectWaapiAsync())) return result;
+
+            var projectPath = util.ConnectionInfo.ProjectPath;
             XmlDocument doc = new XmlDocument();
             doc.Load(projectPath);
             XmlElement pathValues = doc.SelectSingleNode("//*/PropertyList/Property[@Name='SoundBankPaths']/ValueList") as XmlElement;
@@ -22,7 +26,7 @@ namespace WwiseTools.Utils.SoundBank
             {
                 var bankPath = new GeneratedSoundBankPath() {
                     Platform = value.GetAttribute("Platform"), 
-                    Path = Path.Combine(Path.GetDirectoryName(projectPath), value.InnerText) 
+                    Path = Path.Combine(Path.GetDirectoryName(projectPath) ?? string.Empty, value.InnerText) 
 
                 };
 
@@ -34,11 +38,55 @@ namespace WwiseTools.Utils.SoundBank
             return result;
         }
 
-        public static async Task<List<GeneratedSoundBankInfo>> GetGeneratedSoundBankInfos(this WwiseUtility util)
+        public static double BytesToMB(this WwiseUtility util, long bytes)
         {
-            var platformPaths = await util.GetGeneratedSoundBankPaths();
+            double result = (double)bytes / Math.Pow(1024.0, 2);
 
+            return result;
+        }
+
+        
+        
+        
+        public static async Task<long> GetTotalSoundBankSizeAsync(this WwiseUtility util, string platform = "")
+        {
+            if (!(await util.TryConnectWaapiAsync())) return 0;
+
+            var infos = await  util.GetGeneratedSoundBankInfosAsync();
+
+            List<string> files = new List<string>();
+
+            var items = platform == "" ? infos : infos.Where(s => s.Platform == platform);
+
+            foreach (var info in items)
+            {
+                files.Add(info.Path);
+                files.AddRange(info.ReferencedStreamedFiles);
+                files.AddRange(info.LooseMediaFiles);
+            }
+
+            long sum = 0;
+
+            foreach (var file in files.Distinct())
+            {
+                if (File.Exists(file))
+                {
+                    sum += (new FileInfo(file)).Length;
+                }
+            }
+
+            return sum;
+        }
+
+        public static async Task<List<GeneratedSoundBankInfo>> GetGeneratedSoundBankInfosAsync(this WwiseUtility util)
+        {
             var result = new List<GeneratedSoundBankInfo>();
+
+            if (!(await util.TryConnectWaapiAsync())) return result;
+
+            var platformPaths = await util.GetGeneratedSoundBankPathsAsync();
+
+            
 
             foreach (var generatedSoundBankPath in platformPaths)
             {
@@ -69,39 +117,70 @@ namespace WwiseTools.Utils.SoundBank
 
                     result.Add(info);
 
-                    var streamedFiles = soundBankNode.SelectNodes(".//ReferencedStreamedFiles/File");
 
-                    if (streamedFiles != null && streamedFiles.Count > 0)
+                    if (util.ConnectionInfo.Version.Year >= 2022)
                     {
-                        foreach (XmlElement streamedFile in streamedFiles)
+                        var mediaFiles = soundBankNode.SelectNodes(".//Media/File");
+
+                        if (mediaFiles != null && mediaFiles.Count > 0)
                         {
-                            var fileRelativePath = info.Language == "SFX" ? "" : info.Language + "\\";
-                            fileRelativePath += streamedFile.GetAttribute("Id") + ".wem";
+                            foreach (XmlElement mediaFile in mediaFiles)
+                            {
+                                var fileRelativePath = info.Language == "SFX" ? "Media\\" : info.Language + "\\Media\\";
+                                fileRelativePath += mediaFile.GetAttribute("Id") + ".wem";
 
-                            var filePath = Path.Combine(path, fileRelativePath);
+                                string isStreaming = mediaFile.GetAttribute("Streaming");
+                                string location = mediaFile.GetAttribute("Location");
 
-                            info.ReferencedStreamedFiles.Add(filePath);
+                            
+                            
+                                var filePath = Path.Combine(path, fileRelativePath);
 
+
+                                if (location != "Loose") continue;
+                            
+                                if (isStreaming == "true")
+                                    info.ReferencedStreamedFiles.Add(filePath);
+                                else
+                                    info.LooseMediaFiles.Add(filePath);
+
+                            }
                         }
                     }
-
-                    var looseMedias = soundBankNode.SelectNodes(".//ExcludedMemoryFiles/File");
-
-                    if (looseMedias != null && looseMedias.Count > 0)
+                    else
                     {
-                        foreach (XmlElement looseMedia in looseMedias)
+                        var streamedFiles = soundBankNode.SelectNodes(".//ReferencedStreamedFiles/File");
+
+                        if (streamedFiles != null && streamedFiles.Count > 0)
                         {
-                            var fileRelativePath = info.Language == "SFX" ? "" : info.Language + "\\";
-                            fileRelativePath += looseMedia.GetAttribute("Id") + ".wem";
+                            foreach (XmlElement streamedFile in streamedFiles)
+                            {
+                                var fileRelativePath = info.Language == "SFX" ? "" : info.Language + "\\";
+                                fileRelativePath += streamedFile.GetAttribute("Id") + ".wem";
 
-                            var filePath = Path.Combine(path, fileRelativePath);
+                                var filePath = Path.Combine(path, fileRelativePath);
 
-                            info.LooseMediaFiles.Add(filePath);
+                                info.ReferencedStreamedFiles.Add(filePath);
 
+                            }
+                        }
+
+                        var looseMedias = soundBankNode.SelectNodes(".//ExcludedMemoryFiles/File");
+
+                        if (looseMedias != null && looseMedias.Count > 0)
+                        {
+                            foreach (XmlElement looseMedia in looseMedias)
+                            {
+                                var fileRelativePath = info.Language == "SFX" ? "" : info.Language + "\\";
+                                fileRelativePath += looseMedia.GetAttribute("Id") + ".wem";
+
+                                var filePath = Path.Combine(path, fileRelativePath);
+
+                                info.LooseMediaFiles.Add(filePath);
+
+                            }
                         }
                     }
-
-
                 }
             }
 

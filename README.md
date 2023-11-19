@@ -6,9 +6,15 @@ The original readme is below:
 # Wwise Tools
 正在开发的基于C# Waapi的Wwise生产力工具，可以快速生成、编辑Wwise的Object，达到批量添加的效果，提升工作效率。
 
-*作者 : [杨惟勤 (AKA John Loser)](https://losersworldindustries.com/john-yang)*
+*作者 : 杨惟勤 (AKA John Loser)*
 
 ___
+
+## 兼容性说明
+目前该已将WwiseTools应用在2019.1，2019.2以及2021.1版本的工程中，但是并未完整测试所有功能对这些版本的兼容性。
+<br/>
+已经根据[Wwise 2022.1重要迁移说明](https://www.audiokinetic.com/zh/library/2022.1.0_7985/?source=SDK&id=whatsnew_2022_1_migration.html)
+对现有接口进行调整，大部分功能在Wwise2022可用。
 
 ## 使用说明
 ### 配置工程
@@ -33,7 +39,7 @@ static async Task Main(string[] args)
 ```csharp
 var testFolder = await WwiseUtility.Instance.CreateObjectAtPathAsync("TestFolder", WwiseObject.ObjectType.Folder); // 创建一个名称为"TestFolder"的文件夹，默认路径为"\Actor-Mixer Hierarchy\Default Work Unit"。
 var testSound = await WwiseUtility.Instance.CreateObjectAtPathAsync("TestSound", WwiseObject.ObjectType.Sound); // 创建一个名称为"TestSound"的音频对象，默认路径为"\Actor-Mixer Hierarchy\Default Work Unit"。
-await testFolder.GetHierarchy().AddChildAsync(testSound); // 将"testSound"移动至"testFolder"下。
+await testFolder.AsContainer().AddChildAsync(testSound); // 将"testSound"移动至"testFolder"下。
 ```
 
 运行程序后Wwise工程中将会有一个名为"TestFolder"的文件夹，其中包含一个名为"TestSound"的音频对象。
@@ -57,7 +63,7 @@ var randomContainer = await  WwiseUtility.Instance.CreateObjectAtPathAsync("Test
 该函数会自动启用"Attenuation"选项，
 如果无法找到"TestAttenuation"将会在"\Attenuations\Default Work Unit"下创建"TestAttenuation"。
 */
-await randomContainer.GetVoice().SetAttenuationAsync("TestAttenuation"); 
+await randomContainer.AsVoice().SetAttenuationAsync("TestAttenuation"); 
 ```
 
 运行程序后Wwise工程中将会有一个名为"TestRandomContainer"的RandomContainer，"Positioning"菜单中的"Attenuation"参数被勾选，引用设置为"TestAttenuation"。

@@ -1,27 +1,37 @@
-﻿using WwiseTools.Components;
+﻿using System;
+using WwiseTools.WwiseTypes;
 
 namespace WwiseTools.Objects
 {
     public static class WwiseObjectStandardExtensions
     {
-        public static VoiceComponent GetVoice(this WwiseObject obj) => new VoiceComponent(obj);
+        [Obsolete("Use AsActorMixer instead")]
+        public static Voice AsVoice(this WwiseObject obj) => new Voice(obj);
+        
+        public static ActorMixer AsActorMixer(this WwiseObject obj) => new ActorMixer(obj);
 
-        public static WwiseSwitchContainerComponent GetSwitchContainer(this WwiseObject obj) => new WwiseSwitchContainerComponent(obj);
-        public static HierarchyComponent GetHierarchy(this WwiseObject obj) => new HierarchyComponent(obj);
+        public static SwitchContainer AsSwitchContainer(this WwiseObject obj) => new SwitchContainer(obj);
 
-        public static WwiseSoundComponent GetSound(this WwiseObject obj) => new WwiseSoundComponent(obj);
+        public static Container AsContainer(this WwiseObject obj) => new Container(obj);
 
-        public static WwiseRandomSequenceContainerComponent GetRandomSequenceContainer(this WwiseObject obj) =>
-            new WwiseRandomSequenceContainerComponent(obj);
+        public static Sound AsSound(this WwiseObject obj) => new Sound(obj);
 
-        public static WwiseMusicTrackComponent GetMusicTrack(this WwiseObject obj) => new WwiseMusicTrackComponent(obj);
+        public static AudioFileSource AsAudioFileSource(this WwiseObject obj) => new AudioFileSource(obj);
 
-        public static WwiseMusicSegmentComponent GetMusicSegment(this WwiseObject obj) => new WwiseMusicSegmentComponent(obj);
+        public static RandomSequenceContainer AsRandomSequenceContainer(this WwiseObject obj) =>
+            new RandomSequenceContainer(obj);
 
-        public static WwiseMusicPlaylistItemComponent GetMusicPlaylistItem(this WwiseObject obj) => new WwiseMusicPlaylistItemComponent(obj);
+        public static MusicTrack AsMusicTrack(this WwiseObject obj) => new MusicTrack(obj);
 
-        public static  WwiseMusicPlaylistContainerComponent GetMusicPlaylistContainer(this WwiseObject obj) => new WwiseMusicPlaylistContainerComponent(obj);
+        public static MusicSegment AsMusicSegment(this WwiseObject obj) => new MusicSegment(obj);
 
-        public static WwiseMusicSwitchContainerComponent GetMusicSwitchContainer(this WwiseObject obj) => new WwiseMusicSwitchContainerComponent(obj);
+        public static MusicPlaylistItem AsMusicPlaylistItem(this WwiseObject obj) => new MusicPlaylistItem(obj);
+
+        public static  MusicPlaylistContainer AsMusicPlaylistContainer(this WwiseObject obj) => new MusicPlaylistContainer(obj);
+
+        public static MusicSwitchContainer AsMusicSwitchContainer(this WwiseObject obj) => new MusicSwitchContainer(obj);
+
+        public static Event AsEvent(this WwiseObject obj) => new Event(obj);
+        public static WwiseTypes.Action AsAction(this WwiseObject obj) => new WwiseTypes.Action(obj);
     }
 }

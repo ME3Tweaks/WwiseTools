@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.SymbolStore;
 using System.Threading.Tasks;
-using WwiseTools.Components;
+using WwiseTools.WwiseTypes;
 using WwiseTools.Objects;
 using WwiseTools.Properties;
 
@@ -10,18 +10,13 @@ namespace WwiseTools.Utils
     {
         // Actor Mixer Hierarchy
         public static async Task<WwiseObject> CreateRandomSequenceContainer(string objectName, bool isRandomContainer,
-            WwiseObject parent)
+            WwiseObject parent, NameConflictBehaviour conflictBehaviour = NameConflictBehaviour.fail)
         {
             var result = await WwiseUtility.Instance.CreateObjectAsync(objectName, WwiseObject.ObjectType.RandomSequenceContainer,
-                parent);
+                parent, conflictBehaviour, WwiseProperty.Prop_RandomOrSequence(isRandomContainer
+                    ? WwiseProperty.Option_RandomOrSequence.Random
+                    : WwiseProperty.Option_RandomOrSequence.Sequence));
 
-            if (result == null) return result;
-
-            WwiseProperty.Option_RandomOrSequence type = isRandomContainer
-                ? WwiseProperty.Option_RandomOrSequence.Random
-                : WwiseProperty.Option_RandomOrSequence.Sequence;
-
-            await WwiseUtility.Instance.SetObjectPropertyAsync(result, WwiseProperty.Prop_RandomOrSequence(type));
             return result;
         }
 
@@ -43,7 +38,7 @@ namespace WwiseTools.Utils
                 WwiseObject.ObjectType.MusicPlaylistItem, 
                 parentPlaylistItem);
 
-            await playlistItem.GetMusicPlaylistItem().SetPlaylistItemTypeAsync(playlistItemType);
+            await playlistItem.AsMusicPlaylistItem().SetPlaylistItemTypeAsync(playlistItemType);
             return playlistItem;
         }
 
@@ -52,8 +47,8 @@ namespace WwiseTools.Utils
             WwiseObject segment, WwiseObject parentPlaylistItem)
         {
             var playlistItem = await WwiseUtility.Instance.CreateObjectAsync("", WwiseObject.ObjectType.MusicPlaylistItem, parentPlaylistItem);
-            await playlistItem.GetMusicPlaylistItem().SetPlaylistItemTypeAsync(WwiseProperty.Option_PlaylistItemType.Segment);
-            await playlistItem.GetMusicPlaylistItem().SetSegmentRefAsync(segment);
+            await playlistItem.AsMusicPlaylistItem().SetPlaylistItemTypeAsync(WwiseProperty.Option_PlaylistItemType.Segment);
+            await playlistItem.AsMusicPlaylistItem().SetSegmentRefAsync(segment);
             return playlistItem;
         }
     }

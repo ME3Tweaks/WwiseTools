@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿#nullable enable
+using WwiseTools.Objects;
+using WwiseTools.Utils;
 
 namespace WwiseTools.Properties
 {
@@ -10,23 +8,25 @@ namespace WwiseTools.Properties
     {
         public string Name { get; set; }
         public object Value { get; set; }
-
+        
+        public bool IsReference { get; set; }
 
         public override string ToString()
         {
             return Value.ToString();
         }
 
-
-        public WwiseProperty(string name, object value)
+        public WwiseProperty(string name, object value, bool isReference = false)
         {
             Name = name;
             Value = value;
+            IsReference = isReference;
         }
 
         public WwiseProperty(string name)
         {
             Name = name;
+            IsReference = false;
         }
 
         public enum Option_3DPosition { Emitter = 0, EmitterWithAutomation = 1, ListenerWithAutomation = 2 }
@@ -200,9 +200,18 @@ namespace WwiseTools.Properties
             return new WwiseProperty("IsVoice", isVoice);
         }
 
-        public static WwiseProperty Prop_IsZeroLantency(bool zeroLatency)
+        public static WwiseProperty Prop_IsZeroLatency(bool zeroLatency)
         {
-            return new WwiseProperty("IsZeroLantency", zeroLatency);
+            string name = "IsZeroLantency";
+            if (!WwiseUtility.Instance.IsConnected()) 
+                return new WwiseProperty(name, zeroLatency);
+
+            if (WwiseUtility.Instance.ConnectionInfo.Version.Year >= 2022)
+            {
+                name = "IsZeroLatency";
+            }
+
+            return new WwiseProperty(name, zeroLatency);
         }
 
         public static WwiseProperty Prop_ListenerRelativeRouting(bool isListenerRelativeRouting)
@@ -658,6 +667,422 @@ namespace WwiseTools.Properties
         public static WwiseProperty Prop_PlayMode(Option_PlayMode mode)
         {
             return new WwiseProperty("PlayMode", (int)mode);
+        }
+        
+        
+        public enum Option_ActionType
+        {
+            None = 0,
+            Play = 1,
+            Stop = 2,
+            StopAll = 3,
+            Pause = 7,
+            PauseAll = 8,
+            Resume = 9,
+            ResumeAll = 10,
+            Break = 34,
+            Seek = 36,
+            SeekAll = 37,
+            PostEvent = 41,
+            SetBusVolume = 11,
+            ResetBusVolume = 14,
+            ResetBusVolumeAll = 15,
+            SetVoiceVolume = 12,
+            ResetVoiceVolume = 16,
+            ResetVoiceVolumeAll = 17,
+            SetVoicePitch = 13,
+            ResetPitch = 18,
+            ResetPitchAll = 19,
+            SetLPF = 26,
+            ResetLPF = 27,
+            ResetLFPAll = 28,
+            SetHPF = 29,
+            ResetHPF = 30,
+            ResetHPFAll = 31,
+            Mute = 4,
+            UnMute = 5,
+            UnMuteAll = 6,
+            SetGameParameter = 38,
+            ResetGameParameter = 39,
+            EnableState = 20,
+            DisableState = 21,
+            SetState = 22,
+            SetSwitch = 23,
+            Trigger = 35,
+            EnableBypass = 24,
+            DisableBypass = 25,
+            ResetBypassEffect = 32,
+            ResetBypassEffectAll = 33,
+            ReleaseEnvelope = 40,
+            ResetPlaylist = 42
+        
+        }
+        
+        public static WwiseProperty Prop_ActionType(Option_ActionType type)
+        {
+            return new WwiseProperty("ActionType", (int)type);
+        }
+
+        public enum Option_AbsoluteOrRelative { Absolute = 0, Relative = 1 }
+        public static WwiseProperty Prop_AbsoluteOrRelative(Option_AbsoluteOrRelative option)
+        {
+            return new WwiseProperty("AbsoluteOrRelative", (int) option);
+        }
+
+        public static WwiseProperty Prop_ApplyToDynamicSequence(bool value)
+        {
+            return new WwiseProperty("ApplyToDynamicSequence", value);
+        }
+        
+        public static WwiseProperty Prop_ApplyToStateTransition(bool value)
+        {
+            return new WwiseProperty("ApplyToStateTransition", value);
+        }
+        
+        public static WwiseProperty Prop_BypassGameParameterInternalTransition(bool value)
+        {
+            return new WwiseProperty("BypassGameParameterInternalTransition", value);
+        }
+        
+        public static WwiseProperty Prop_MasterResume(bool value)
+        {
+            return new WwiseProperty("MasterResume", value);
+        }
+        
+        public static WwiseProperty Prop_PauseDelayedResumeAction(bool value)
+        {
+            return new WwiseProperty("PauseDelayedResumeAction", value);
+        }
+        
+        public static WwiseProperty Prop_ResumeStateTransition(bool value)
+        {
+            return new WwiseProperty("ResumeStateTransition", value);
+        }
+        
+        public static WwiseProperty Prop_SeekToMarker(bool value)
+        {
+            return new WwiseProperty("SeekToMarker", value);
+        }
+
+        public static WwiseProperty Prop_ActionDelay(float value)
+        {
+            return new WwiseProperty("Delay", valueLimiter(value, 0f, 600f));
+        }
+
+        public enum Option_Curve
+        {
+            Logarithmic3 = 0,
+            Sine = 1,
+            Logarithmic141 = 2,
+            InvertedSCurve = 3,
+            Linear = 4,
+            SCurve = 5,
+            Exponential141 = 6,
+            Reciprocal = 7,
+            Exponential3 = 8
+        }
+
+        public static WwiseProperty Prop_FadeInCurve(Option_Curve curve)
+        {
+            return new WwiseProperty("FadeInCurve", (int) curve);
+        }
+        
+        public static WwiseProperty Prop_FadeOutCurve(Option_Curve curve)
+        {
+            return new WwiseProperty("FadeOutCurve", (int) curve);
+        }
+        
+        public static WwiseProperty Prop_Probability(float value)
+        {
+            return new WwiseProperty("Probability", valueLimiter(value, 0f, 100));
+        }
+        
+        public static WwiseProperty Prop_FadeTime(float value)
+        {
+            return new WwiseProperty("FadeTime", valueLimiter(value, 0f, 60f));
+        }
+        
+        public static WwiseProperty Prop_GameParameterValue(float value)
+        {
+            return new WwiseProperty("GameParameterValue", value);
+        }
+        
+        public static WwiseProperty Prop_SeekPercent(float value)
+        {
+            return new WwiseProperty("SeekPercent", valueLimiter(value, 0f, 100f));
+        }
+        
+        public static WwiseProperty Prop_SeekTime(float value)
+        {
+            return new WwiseProperty("SeekTime", valueLimiter(value, 0f, 3600f));
+        }
+        
+        public static WwiseProperty Prop_Highpass(int value)
+        {
+            return new WwiseProperty("Highpass", valueLimiter(value, -100, 100));
+        }
+        
+        public static WwiseProperty Prop_Lowpass(int value)
+        {
+            return new WwiseProperty("Lowpass", valueLimiter(value, -100, 100));
+        }
+
+        public enum Option_Scope
+        {
+            GameObject = 0,
+            Global = 1
+        }
+
+        public static WwiseProperty Prop_Scope(Option_Scope option)
+        {
+            return new WwiseProperty("Scope", (int) option);
+        }
+
+        public static WwiseProperty Prop_ChannelConfigOverride(int value)
+        {
+            return new WwiseProperty("ChannelConfigurationOverride", value);
+        }
+        
+        public static WwiseProperty Prop_CrossfadeDuration(float value)
+        {
+            return new WwiseProperty("CrossfadeDuration", valueLimiter(value, 0f, 60000f));
+        }
+        
+        public static WwiseProperty Prop_FadeInDuration(float value)
+        {
+            return new WwiseProperty("FadeInDuration", valueLimiter(value, 0f, 3600f));
+        }
+        
+        public static WwiseProperty Prop_FadeOutDuration(float value)
+        {
+            return new WwiseProperty("FadeOutDuration", valueLimiter(value, 0f, 3600f));
+        }
+        
+        public static WwiseProperty Prop_HdrEnvelope(float value)
+        {
+            return new WwiseProperty("HdrEnvelope", valueLimiter(value, 0f, 1f));
+        }
+        
+        public static WwiseProperty Prop_LoopBegin(float value)
+        {
+            return new WwiseProperty("LoopBegin", value);
+        }
+        
+        public static WwiseProperty Prop_LoopEnd(float value)
+        {
+            return new WwiseProperty("LoopEnd", value);
+        }
+        
+        public static WwiseProperty Prop_MarkerDetectionSensitivity(float value)
+        {
+            return new WwiseProperty("MarkerDetectionSensitivity", valueLimiter(value, 0f, 100f));
+        }
+        
+        public static WwiseProperty Prop_TrimBegin(float value)
+        {
+            return new WwiseProperty("TrimBegin", value);
+        }
+        
+        public static WwiseProperty Prop_TrimEnd(float value)
+        {
+            return new WwiseProperty("TrimEnd", value);
+        }
+        
+        public static WwiseProperty Prop_VolumeOffset(float value)
+        {
+            return new WwiseProperty("VolumeOffset", valueLimiter(value, -24f, 24f));
+        }
+
+        public static WwiseProperty Prop_CrossfadeShape(Option_Curve curve)
+        {
+            return new WwiseProperty("CrossfadeShape", (int) curve);
+        }
+        
+        public static WwiseProperty Prop_FadeInShape(Option_Curve curve)
+        {
+            return new WwiseProperty("FadeInShape", (int) curve);
+        }
+        
+        public static WwiseProperty Prop_FadeOutShape(Option_Curve curve)
+        {
+            return new WwiseProperty("FadeOutShape", (int) curve);
+        }
+
+        public enum Option_MarkerInputMode
+        {
+            ImportFromFile = 0,
+            DetectFromTransients = 1,
+            ManualMarkers = 2
+        }
+
+        public static WwiseProperty Prop_MarkerInputMode(Option_MarkerInputMode mode)
+        {
+            return new WwiseProperty("MarkerInputMode", (int) mode);
+        }
+        
+        public static WwiseProperty Prop_OverrideWavLoop(bool value)
+        {
+            return new WwiseProperty("OverrideWavLoop", value);
+        }
+        
+        
+
+        public enum Option_SeekType
+        {
+            Percent = 0,
+            Time = 1
+        }
+        
+        public static WwiseProperty Prop_SeekType(Option_SeekType option)
+        {
+            return new WwiseProperty("SeekType", (int) option);
+        }
+        
+        public static WwiseProperty Prop_Attenuation(WwiseObject wwiseObject)
+        {
+            //if (wwiseObject == null) return null;
+
+            if (wwiseObject != null && wwiseObject.Type != WwiseObject.ObjectType.Attenuation.ToString())
+            {
+                return null;
+            }
+            return new WwiseProperty("Attenuation", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_Conversion(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != WwiseObject.ObjectType.Conversion.ToString())
+            {
+                return null;
+            }
+            return new WwiseProperty("Conversion", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_Effect0(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != "Effect")
+            {
+                return null;
+            }
+            return new WwiseProperty("Effect0", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_Effect1(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != "Effect")
+            {
+                return null;
+            }
+            return new WwiseProperty("Effect1", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_Effect2(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != "Effect")
+            {
+                return null;
+            }
+            return new WwiseProperty("Effect2", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_Effect3(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != "Effect")
+            {
+                return null;
+            }
+            return new WwiseProperty("Effect3", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_OutputBus(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != "Bus")
+            {
+                return null;
+            }
+            return new WwiseProperty("OutputBus", wwiseObject.ID, true);
+        }
+        public static WwiseProperty Prop_ReflectionsAuxSend(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != "AuxBus")
+            {
+                return null;
+            }
+            return new WwiseProperty("ReflectionsAuxSend", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_UserAuxSend0(WwiseObject wwiseObject)
+        {
+            //if (wwiseObject == null) return null;
+            if (wwiseObject != null && wwiseObject.Type != "AuxBus")
+            {
+                return null;
+            }
+            return new WwiseProperty("UserAuxSend0", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_UserAuxSend1(WwiseObject wwiseObject)
+        {
+            //if (wwiseObject == null) return null;
+            if (wwiseObject != null && wwiseObject.Type != "AuxBus")
+            {
+                return null;
+            }
+            return new WwiseProperty("UserAuxSend1", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_UserAuxSend2(WwiseObject wwiseObject)
+        {
+            //if (wwiseObject == null) return null;
+            if (wwiseObject != null && wwiseObject.Type != "AuxBus")
+            {
+                return null;
+            }
+            return new WwiseProperty("UserAuxSend2", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_UserAuxSend3(WwiseObject wwiseObject)
+        {
+            //if (wwiseObject == null) return null;
+            if (wwiseObject != null && wwiseObject.Type != "AuxBus")
+            {
+                return null;
+            }
+            return new WwiseProperty("UserAuxSend3", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_SwitchGroupOrStateGroup(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != "SwitchGroup" && wwiseObject.Type != "StateGroup")
+            {
+                return null;
+            }
+            return new WwiseProperty("SwitchGroupOrStateGroup", wwiseObject.ID, true);
+        }
+
+        public static WwiseProperty Prop_DefaultSwitchOrState(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+            if (wwiseObject.Type != "Switch" && wwiseObject.Type != "State")
+            {
+                return null;
+            }
+            return new WwiseProperty("DefaultSwitchOrState", wwiseObject.ID, true);
+        }
+        
+        public static WwiseProperty Prop_Target(WwiseObject wwiseObject)
+        {
+            if (wwiseObject == null) return null;
+
+            return new WwiseProperty("Target", wwiseObject.ID, true);
         }
 
 
