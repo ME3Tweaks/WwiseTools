@@ -14,7 +14,10 @@
     <Version>2.2.2</Version>
     <PackageTags>Wwise,Waapi,WwiseTools,Audio,Sound,Game</PackageTags>
     <AssemblyName>WwiseTools</AssemblyName>
-	  <Platforms>x64</Platforms>
+	<Platforms>x64</Platforms>
+	  <EnableSourceControlManagerQueries>true</EnableSourceControlManagerQueries>
+	  <!-- Hot reload is completely broken without this -->
+	  <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
